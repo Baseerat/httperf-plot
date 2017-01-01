@@ -8,6 +8,7 @@
 import argparse
 import re
 import subprocess
+import csv
 
 from plot import Canvas
 
@@ -51,6 +52,12 @@ def parse_args():
     parser.add_argument('--ramp-up', metavar='X,N',
                         dest='--ramp-up', action='store',
                         help='specifies the ramp-up rate X, times N (httperf-plot parameter)')
+    parser.add_argument('--csv', metavar='S',
+                        dest='--csv', action='store',
+                        help='specifies the csv output file')
+    parser.add_argument('--plot',
+                        dest='--plot', action='store_true', default=False,
+                        help='specifies to plot csv file')
 
     return vars(parser.parse_args())
 
@@ -76,41 +83,70 @@ def httperf_once(args):
 
 
 def httperf_plot(data):
-    parse_data = [(datum['Rate'], datum['Request rate']) for datum in data]
+    parse_data = [(float(datum['Rate']), float(datum['Request rate'])) for datum in data]
     a = Canvas(title='Rate - Request rate', xlab='Rate', ylab='Request rate',
-               xrange=(0, max([datum['Rate'] for datum in data])),
-               yrange=(-5, max([datum['Request rate'] for datum in data]) + 5))
+               xrange=(min([float(datum['Rate']) for datum in data]), max([float(datum['Rate']) for datum in data])),
+               yrange=(min([float(datum['Request rate']) for datum in data]) - 5,
+                       max([float(datum['Request rate']) for datum in data]) + 5))
     a.plot(parse_data).save('plot1.png')
 
-    parse_data = [(datum['Rate'], datum['Response time']) for datum in data]
+    parse_data = [(float(datum['Rate']), float(datum['Response time'])) for datum in data]
     b = Canvas(title='Rate - Response time', xlab='Rate', ylab='Response time',
-               xrange=(0, max([datum['Rate'] for datum in data])),
-               yrange=(-5, max([datum['Response time'] for datum in data]) + 5))
+               xrange=(min([float(datum['Rate']) for datum in data]), max([float(datum['Rate']) for datum in data])),
+               yrange=(min([float(datum['Response time']) for datum in data]) - 5,
+                       max([float(datum['Response time']) for datum in data]) + 5))
     b.plot(parse_data).save('plot2.png')
 
-    parse_data = [(datum['Rate'],
-                   (datum['Response status 2xx'] + datum['Response status 3xx']) / datum['Number of requests'] * 100.0)
+    parse_data = [(float(datum['Rate']),
+                   (float(datum['Response status 2xx']) + float(datum['Response status 3xx'])) / float(datum['Number of requests']) * 100.0)
                   for datum in data]
     c = Canvas(title='Rate - Success rate', xlab='Rate', ylab='Success rate',
-               xrange=(0, max([datum['Rate'] for datum in data])),
-               yrange=(-5, 100 + 5))
+               xrange=(min([float(datum['Rate']) for datum in data]), max([float(datum['Rate']) for datum in data])),
+               yrange=(0 - 5, 100 + 5))
     c.plot(parse_data).save('plot3.png')
 
-    Canvas.show()
+    # Canvas.show()
 
 
 if __name__ == '__main__':
     args = parse_args()
     plot_data = []
 
-    if args['--ramp-up'] is not None:
+    csv_file = ''
+    if args['--csv'] is not None:
+        csv_file = args['--csv']
+        del args['--csv']
+
+    if args['--plot'] is not None:
+        plot_data = []
+        with open(csv_file, 'r') as csv_fd:
+            reader = csv.DictReader(csv_fd)
+            for row in reader:
+                plot_data.append(row)
+
+        httperf_plot(plot_data)
+    elif args['--ramp-up'] is not None:
         ramp_up = args['--ramp-up'].split(',')
         del args['--ramp-up']
 
-        for i in range(int(ramp_up[1])):
-            plot_data.append(httperf_once(args))
-            args['--rate'] = str(int(args['--rate']) + int(ramp_up[0]))
+        if csv_file:
+            for i in range(int(ramp_up[1])):
+                plot_data.append(httperf_once(args))
+                args['--rate'] = str(int(args['--rate']) + int(ramp_up[0]))
 
-        httperf_plot(plot_data)
+            if len(plot_data) > 0:
+                with open(csv_file, 'w') as csv_fd:
+                    field_names = plot_data[0].keys()
+                    writer = csv.DictWriter(csv_fd, fieldnames=field_names)
+
+                    writer.writeheader()
+                    for row in plot_data:
+                        writer.writerow(row)
+        else:
+            for i in range(int(ramp_up[1])):
+                plot_data.append(httperf_once(args))
+                args['--rate'] = str(int(args['--rate']) + int(ramp_up[0]))
+
+            httperf_plot(plot_data)
     else:
         httperf_once(args)
