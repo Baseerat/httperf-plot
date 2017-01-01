@@ -105,7 +105,7 @@ def httperf_plot(data):
                yrange=(0 - 5, 100 + 5))
     c.plot(parse_data).save('plot3.png')
 
-    # Canvas.show()
+    Canvas.show()
 
 
 if __name__ == '__main__':
