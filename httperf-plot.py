@@ -117,7 +117,10 @@ if __name__ == '__main__':
         csv_file = args['--csv']
         del args['--csv']
 
-    if args['--plot'] is not None:
+    plot = args['--plot']
+    del args['--plot']
+
+    if plot:
         plot_data = []
         with open(csv_file, 'r') as csv_fd:
             reader = csv.DictReader(csv_fd)
