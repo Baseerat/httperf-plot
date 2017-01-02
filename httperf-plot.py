@@ -9,6 +9,7 @@ import argparse
 import re
 import subprocess
 import csv
+import time
 
 from plot import Canvas
 
@@ -48,6 +49,9 @@ def parse_args():
                         help='specifies the following parameters: N is the number of sessions to initiate, '
                              'X is the user think-time (in seconds) that separates consecutive call bursts, '
                              'and many aspects of user sessions can be specified in an input file F')
+    parser.add_argument('--hog',
+                        dest='--hog', action='store_true', default=False,
+                        help='specifies the hog parameter')
 
     parser.add_argument('--ramp-up', metavar='X,N',
                         dest='--ramp-up', action='store',
@@ -65,7 +69,14 @@ def parse_args():
 def httperf_once(args):
     rst = {}
 
-    out_bytes = subprocess.check_output(['httperf'] + ['='.join(arg) for arg in args.items() if arg[1] is not None])
+    params = []
+    for arg in args.items():
+        if isinstance(arg[1], bool) and arg[1]:
+            params += [arg[0]]
+        elif arg[1] is not None:
+            params += ['='.join(arg)]
+    # out_bytes = subprocess.check_output(['httperf'] + ['='.join(arg) for arg in args.items() if arg[1] is not None])
+    out_bytes = subprocess.check_output(['httperf'] + params)
     out_bytes_str = out_bytes.decode()
     print(out_bytes_str)
 
@@ -108,17 +119,31 @@ def httperf_plot(data):
     Canvas.show()
 
 
+# def httperf_TIME_WAIT():
+#     out_bytes = subprocess.check_output(r"""netstat -t | wc -l""", shell=True)
+#     out_bytes_str = out_bytes.decode()
+#     return int(out_bytes_str)
+
+
 if __name__ == '__main__':
+    httper_TIME_WAIT()
+
+    exit(1)
+
+
     args = parse_args()
     plot_data = []
 
     csv_file = ''
     if args['--csv'] is not None:
         csv_file = args['--csv']
-        del args['--csv']
+        args['--csv'] = None
 
     plot = args['--plot']
-    del args['--plot']
+    args['--plot'] = None
+
+    if not args['--hog']:
+        args['--hog'] = None
 
     if plot:
         plot_data = []
