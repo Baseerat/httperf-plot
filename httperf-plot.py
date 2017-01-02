@@ -126,11 +126,6 @@ def httperf_plot(data):
 
 
 if __name__ == '__main__':
-    httper_TIME_WAIT()
-
-    exit(1)
-
-
     args = parse_args()
     plot_data = []
 
