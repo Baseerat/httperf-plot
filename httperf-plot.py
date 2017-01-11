@@ -141,13 +141,16 @@ if __name__ == '__main__':
         args['--hog'] = None
 
     if plot:
-        plot_data = []
-        with open(csv_file, 'r') as csv_fd:
-            reader = csv.DictReader(csv_fd)
-            for row in reader:
-                plot_data.append(row)
+        if csv_file:
+            plot_data = []
+            with open(csv_file, 'r') as csv_fd:
+                reader = csv.DictReader(csv_fd)
+                for row in reader:
+                    plot_data.append(row)
 
-        httperf_plot(plot_data)
+            httperf_plot(plot_data)
+        else:
+            exit(1)
     elif args['--ramp-up'] is not None:
         ramp_up = args['--ramp-up'].split(',')
         del args['--ramp-up']
