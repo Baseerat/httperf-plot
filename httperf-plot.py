@@ -105,7 +105,7 @@ def httperf_once(args):
                          r'(\s+)(\d+%: \d+)', out_bytes_str)
     if len(rr_perc) > 0:
         for k, v in {x[0]: x[1] for x in [rr_perc[0][j].split(': ') for j in range(2, len(rr_perc[0]), 2)]}.iteritems():
-            rst['Request rate ' + k] = float(v)
+            rst['Response rate ' + k] = float(v)
 
     rt_perc = re.findall(r'(Percentages of the requests served within a certain time \(ms\) :)'
                          r'(\s+)(\d+%: \d+)'
