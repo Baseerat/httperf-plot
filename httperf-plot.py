@@ -52,6 +52,9 @@ def parse_args():
     parser.add_argument('--hog',
                         dest='--hog', action='store_true', default=False,
                         help='specifies the hog parameter')
+    parser.add_argument('--verbose',
+                        dest='--verbose', action='store_true', default=False,
+                        help='specifies the verbose parameter')
 
     parser.add_argument('--ramp-up', metavar='X,N',
                         dest='--ramp-up', action='store',
@@ -89,6 +92,34 @@ def httperf_once(args):
     rst['Response status 3xx'] = int(re.findall(r'(3xx=)(\d+)', out_bytes_str)[0][1])
     rst['Response status 4xx'] = int(re.findall(r'(4xx=)(\d+)', out_bytes_str)[0][1])
     rst['Response status 5xx'] = int(re.findall(r'(5xx=)(\d+)', out_bytes_str)[0][1])
+
+    rr_perc = re.findall(r'(Percentages of the replies served at a given rate:)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)', out_bytes_str)
+    if len(rr_perc) > 0:
+        for k, v in {x[0]: x[1] for x in [rr_perc[0][j].split(': ') for j in range(2, len(rr_perc[0]), 2)]}.iteritems():
+            rst['Request rate ' + k] = float(v)
+
+    rt_perc = re.findall(r'(Percentages of the requests served within a certain time \(ms\) :)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)'
+                         r'(\s+)(\d+%: \d+)', out_bytes_str)
+    if len(rt_perc) > 0:
+        for k, v in {x[0]: x[1] for x in [rt_perc[0][j].split(': ') for j in range(2, len(rt_perc[0]), 2)]}.iteritems():
+            rst['Response time ' + k] = float(v)
 
     return rst
 
@@ -139,6 +170,9 @@ if __name__ == '__main__':
 
     if not args['--hog']:
         args['--hog'] = None
+
+    if not args['--verbose']:
+        args['--verbose'] = None
 
     if plot:
         if csv_file:
